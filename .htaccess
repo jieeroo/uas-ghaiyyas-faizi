@@ -1,0 +1,44 @@
+# ============================================================
+#  yassjokiin/api/.htaccess
+#  Proteksi & routing untuk API PHP
+# ============================================================
+
+Options -Indexes
+
+# Paksa UTF-8
+AddDefaultCharset UTF-8
+
+# Header keamanan dasar
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Izinkan CORS preflight (OPTIONS) melewati autentikasi .htaccess
+<Limit OPTIONS>
+    Order allow,deny
+    Allow from all
+</Limit>
+
+# Blokir akses langsung ke config.php dari browser
+<Files "config.php">
+    Order deny,allow
+    Deny from all
+</Files>
+
+# Jika PHP tidak bisa menangani .php langsung, aktifkan rewrite
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /yassjokiin/api/
+
+    # Izinkan file yang ada secara fisik
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ - [L]
+
+    # Optional: sembunyikan ekstensi .php
+    # RewriteRule ^auth$     auth.php     [L,QSA]
+    # RewriteRule ^services$ services.php [L,QSA]
+    # RewriteRule ^orders$   orders.php   [L,QSA]
+</IfModule>
