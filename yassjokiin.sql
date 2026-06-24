@@ -1,8 +1,8 @@
-CREATE DATABASE IF NOT EXISTS yassjokiin
+CREATE DATABASE IF NOT EXISTS admin_ghaiyyas_2430511028
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
-USE yassjokiin;
+USE admin_ghaiyyas_2430511028;
 
 
 CREATE TABLE IF NOT EXISTS users (
