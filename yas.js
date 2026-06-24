@@ -8,7 +8,10 @@ const API = {
 
   headers() {
     const h = { 'Content-Type': 'application/json' };
-    if (this.token) h['Authorization'] = 'Bearer ' + this.token;
+    if (this.token) {
+      h['Authorization'] = 'Bearer ' + this.token;
+      h['X-Auth-Token'] = this.token;
+    }
     return h;
   },
 
@@ -60,9 +63,12 @@ function debounce(fn, ms) {
 // Menampilkan notifikasi singkat di bawah layar saat aksi berhasil atau gagal.
 function showToast(msg, type = 'ok') {
   const el = document.getElementById('toast');
+  if (!el) return;
   el.textContent = msg;
   el.className = 'toast show ' + type;
-  setTimeout(() => el.className = 'toast hidden', 3200);
+  setTimeout(() => {
+    if (el) el.className = 'toast hidden';
+  }, 3200);
 }
 // Mengubah tombol menjadi mode loading saat proses penyimpanan sedang berjalan.
 function setLoading(btnId, loading, label = 'Simpan') {
@@ -138,15 +144,16 @@ function hideMsg() { document.getElementById('loginMsg').className = 'form-msg';
 async function handleLogin(e) {
   e.preventDefault();
   const btn = document.getElementById('loginBtn');
+  if (!btn) return;
   btn.disabled = true; btn.textContent = 'Masuk...';
   try {
-    const res = await API.post('/auth.php?action=login', {
-      username: document.getElementById('loginUsername').value.trim(),
-      password: document.getElementById('loginPassword').value,
-    });
+    const username = document.getElementById('loginUsername')?.value?.trim() || '';
+    const password = document.getElementById('loginPassword')?.value || '';
+    const res = await API.post('/auth.php?action=login', { username, password });
+    if (!res || !res.ok) throw new Error(res?.error || 'Login gagal.');
     API.token = res.token;
-    localStorage.setItem('yj_token', res.token);
-    localStorage.setItem('yj_user', JSON.stringify(res.user));
+    localStorage.setItem('yj_token', res.token || '');
+    localStorage.setItem('yj_user', JSON.stringify(res.user || {}));
     enterApp(res.user);
   } catch (err) {
     showMsg(err.message || 'Username atau password salah.', 'err');
@@ -183,18 +190,25 @@ async function logout() {
   API.token = null;
   localStorage.removeItem('yj_token');
   localStorage.removeItem('yj_user');
-  document.getElementById('app').classList.add('hidden');
-  document.getElementById('loginScreen').classList.remove('hidden');
-  document.getElementById('loginForm').reset();
+  const app = document.getElementById('app');
+  const loginScreen = document.getElementById('loginScreen');
+  const loginForm = document.getElementById('loginForm');
+  if (app) app.classList.add('hidden');
+  if (loginScreen) loginScreen.classList.remove('hidden');
+  if (loginForm) loginForm.reset();
 }
 
 // Menampilkan dashboard utama setelah login berhasil.
 function enterApp(user) {
   if (!user) return;
-  document.getElementById('loginScreen').classList.add('hidden');
-  document.getElementById('app').classList.remove('hidden');
-  document.getElementById('userNameLabel').textContent = user.name || user.username;
-  document.getElementById('userAvatar').textContent = (user.name || user.username).charAt(0).toUpperCase();
+  const loginScreen = document.getElementById('loginScreen');
+  const app = document.getElementById('app');
+  const userNameLabel = document.getElementById('userNameLabel');
+  const userAvatar = document.getElementById('userAvatar');
+  if (loginScreen) loginScreen.classList.add('hidden');
+  if (app) app.classList.remove('hidden');
+  if (userNameLabel) userNameLabel.textContent = user.name || user.username || 'User';
+  if (userAvatar) userAvatar.textContent = (user.name || user.username || 'U').charAt(0).toUpperCase();
   renderServices();
   renderOrders();
   fillOrderServiceOptions();
@@ -203,25 +217,30 @@ function enterApp(user) {
 
 
 (async function checkSession() {
-  const savedToken = localStorage.getItem('yj_token');
-  const savedUser = JSON.parse(localStorage.getItem('yj_user') || 'null');
-
-  if (savedToken) API.token = savedToken;
-
-  if (savedUser) {
-    enterApp(savedUser);
-  }
-
-  if (!API.token) return;
-
   try {
-    const res = await API.get('/auth.php?action=me');
-    if (res && res.ok && res.user) {
-      localStorage.setItem('yj_user', JSON.stringify(res.user));
-      enterApp(res.user);
+    const savedToken = localStorage.getItem('yj_token');
+    const savedUser = JSON.parse(localStorage.getItem('yj_user') || 'null');
+
+    if (savedToken) API.token = savedToken;
+
+    if (savedUser) {
+      enterApp(savedUser);
+    }
+
+    if (!API.token) return;
+
+    try {
+      const res = await API.get('/auth.php?action=me');
+      if (res && res.ok && res.user) {
+        localStorage.setItem('yj_user', JSON.stringify(res.user));
+        enterApp(res.user);
+      }
+    } catch (_) {
+      // Tetap tampilkan dashboard dari data yang tersimpan saat refresh.
     }
   } catch (_) {
-    // Tetap tampilkan dashboard dari data yang tersimpan saat refresh.
+    localStorage.removeItem('yj_user');
+    localStorage.removeItem('yj_token');
   }
 })();
 
@@ -357,8 +376,8 @@ async function saveService(e) {
     closeModal('serviceModalOverlay');
     renderServices();
     fillOrderServiceOptions();
-  } catch (_) {
-    showToast('❌ Terjadi kesalahan saat menyimpan layanan.');
+  } catch (err) {
+    showToast('❌ ' + (err.message || 'Terjadi kesalahan saat menyimpan layanan.'));
   } finally {
     setLoading('svcSaveBtn', false, 'Simpan Layanan');
   }
@@ -664,72 +683,3 @@ function downloadBlob(content, filename, mime) {
   a.href = url; a.download = filename; a.click();
   URL.revokeObjectURL(url);
 }
-
-
-// Fitur musik latar untuk presentasi menggunakan video YouTube embed.
-let bgmPlayer = null;
-let bgmReady = false;
-const BGM_VIDEO_ID = 'xxpg9_2on3I';
-
-function initBgm() {
-  const mount = document.getElementById('bgmPlayer');
-  const btn = document.getElementById('bgmBtn');
-  if (!mount || !btn) return;
-
-  if (window.YT && window.YT.Player) {
-    bgmPlayer = new window.YT.Player('bgmPlayer', {
-      videoId: BGM_VIDEO_ID,
-      host: 'https://www.youtube-nocookie.com',
-      playerVars: {
-        autoplay: 0,
-        controls: 0,
-        rel: 0,
-        modestbranding: 1,
-        playsinline: 1,
-        loop: 1,
-        playlist: BGM_VIDEO_ID
-      },
-      events: {
-        onReady: () => {
-          bgmReady = true;
-          const shouldPlay = localStorage.getItem('yj_bgm_playing') === '1';
-          if (shouldPlay) {
-            bgmPlayer.playVideo();
-            btn.textContent = '🔊';
-          }
-        },
-        onStateChange: (event) => {
-          if (event.data === window.YT.PlayerState.PLAYING) {
-            btn.textContent = '🔊';
-          } else if (event.data === window.YT.PlayerState.PAUSED || event.data === window.YT.PlayerState.ENDED) {
-            btn.textContent = '🔇';
-          }
-        }
-      }
-    });
-  } else {
-    window.onYouTubeIframeAPIReady = initBgm;
-  }
-}
-
-// Memutar atau menghentikan musik latar saat tombol ditekan.
-function toggleBgm() {
-  const btn = document.getElementById('bgmBtn');
-  if (!bgmReady || !bgmPlayer) {
-    initBgm();
-    return;
-  }
-
-  const state = bgmPlayer.getPlayerState();
-  if (state === window.YT.PlayerState.PLAYING) {
-    bgmPlayer.pauseVideo();
-    btn.textContent = '🔇';
-    localStorage.setItem('yj_bgm_playing', '0');
-  } else {
-    bgmPlayer.playVideo();
-    btn.textContent = '🔊';
-    localStorage.setItem('yj_bgm_playing', '1');
-  }
-}
-
-initBgm();

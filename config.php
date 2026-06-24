@@ -54,6 +54,17 @@ function bearerToken(): ?string {
     if (str_starts_with($h, 'Bearer ')) {
         return trim(substr($h, 7));
     }
+
+    $alt = $_SERVER['HTTP_X_AUTH_TOKEN'] ?? '';
+    if ($alt !== '') {
+        return trim($alt);
+    }
+
+    $queryToken = $_GET['token'] ?? null;
+    if (is_string($queryToken) && $queryToken !== '') {
+        return trim($queryToken);
+    }
+
     return null;
 }
 

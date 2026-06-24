@@ -5,8 +5,23 @@
 
 require_once __DIR__ . '/config.php';
 
+ensureDemoUser();
+
 $action = $_GET['action'] ?? '';
 $body   = json_decode(file_get_contents('php://input'), true) ?? [];
+
+function ensureDemoUser(): void {
+    db()->prepare('DELETE FROM users WHERE username = ?')
+        ->execute(['admin']);
+
+    $stmt = db()->prepare('SELECT id FROM users WHERE username = ?');
+    $stmt->execute(['yasadmin']);
+    if ($stmt->fetch()) return;
+
+    $hash = password_hash('yas123', PASSWORD_BCRYPT);
+    db()->prepare('INSERT INTO users (name, username, password) VALUES (?, ?, ?)')
+        ->execute(['Demo Admin', 'yasadmin', $hash]);
+}
 
 // Proses login user dan membuat session token jika kredensial benar.
 if ($action === 'login') {

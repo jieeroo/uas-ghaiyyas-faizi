@@ -62,7 +62,7 @@
       <button class="btn btn-accent" type="submit" id="registerBtn" style="width:100%;justify-content:center;padding:13px;">Daftar Akun</button>
     </form>
     
-    <div class="hint-box">Akun demo: <b>admin</b> / <b>admin123</b></div>
+    <div class="hint-box">Akun demo: <b>yasadmin</b> / <b>yas123</b></div>
   </div>
 </div>
 <!-- End Register Form -->
