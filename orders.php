@@ -1,11 +1,14 @@
 <?php
 
+// orders.php
+// Fungsi utamanya adalah membaca, menambah, mengedit, dan menghapus pesanan beserta tanda tangan digital.
+
 require_once __DIR__ . '/config.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 $id     = isset($_GET['id']) ? (int) $_GET['id'] : null;
 
-
+// Menampilkan semua pesanan atau detail satu pesanan sesuai request.
 if ($method === 'GET') {
     if ($id) {
         $row = fetchOrder($id);
@@ -29,6 +32,7 @@ if ($method === 'GET') {
 }
 
 
+// Menyimpan pesanan baru ke database.
 if ($method === 'POST') {
     requireAuth();
     $body = json_decode(file_get_contents('php://input'), true) ?? [];
@@ -45,6 +49,7 @@ if ($method === 'POST') {
 }
 
 
+// Mengubah data pesanan yang sudah ada, termasuk tanda tangan digital.
 if ($method === 'PUT') {
     requireAuth();
     if (!$id) error('ID pesanan diperlukan.');
@@ -74,6 +79,7 @@ if ($method === 'PUT') {
 }
 
 
+// Menghapus pesanan berdasarkan ID.
 if ($method === 'DELETE') {
     requireAuth();
     if (!$id) error('ID pesanan diperlukan.');
@@ -88,6 +94,7 @@ if ($method === 'DELETE') {
 error('Method tidak didukung.', 405);
 
 
+// Menjaga data pesanan tetap valid sebelum disimpan ke database.
 function validateOrderBody(array $b): array {
     $nama      = trim($b['nama'] ?? '');
     $serviceId = isset($b['service_id']) && $b['service_id'] !== '' ? (int) $b['service_id'] : null;
@@ -107,6 +114,7 @@ function validateOrderBody(array $b): array {
     ];
 }
 
+// Mengambil satu pesanan lengkap beserta nama layanan terkait.
 function fetchOrder(int $id): ?array {
     $stmt = db()->prepare(
         'SELECT o.*, s.nama AS layanan_nama

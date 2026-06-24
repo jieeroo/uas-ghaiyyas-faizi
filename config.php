@@ -1,5 +1,7 @@
 <?php
 
+// config.php
+// Berisi koneksi database, lama sesi login, dan fungsi bantu backend seperti auth dan response JSON.
 
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'yassjokiin');
@@ -11,6 +13,7 @@ define('SESSION_LIFETIME', 60 * 60 * 8);
 define('ALLOWED_ORIGIN', '*');              
 
 
+// Membuat koneksi database sekali saja dan mengembalikannya untuk dipakai berulang kali.
 function db(): PDO {
     static $pdo = null;
     if ($pdo === null) {
@@ -28,6 +31,7 @@ function db(): PDO {
 }
 
 
+// Mengirim response dalam format JSON ke frontend.
 function respond(mixed $data, int $code = 200): never {
     http_response_code($code);
     header('Content-Type: application/json; charset=utf-8');
@@ -38,11 +42,13 @@ function respond(mixed $data, int $code = 200): never {
 }
 
 
+// Mengirim response error yang konsisten ke frontend.
 function error(string $msg, int $code = 400): never {
     respond(['ok' => false, 'error' => $msg], $code);
 }
 
 
+// Membaca token Bearer dari header Authorization request.
 function bearerToken(): ?string {
     $h = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
     if (str_starts_with($h, 'Bearer ')) {
@@ -52,6 +58,7 @@ function bearerToken(): ?string {
 }
 
 
+// Memastikan request memiliki sesi login yang valid sebelum mengakses data sensitif.
 function requireAuth(): int {
     $token = bearerToken();
     if (!$token) error('Unauthorized — token tidak ditemukan.', 401);

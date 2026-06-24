@@ -1,3 +1,4 @@
+// Layer komunikasi dengan server PHP melalui API fetch.
 const API = {
   BASE: (() => {
     const path = window.location.pathname;
@@ -42,34 +43,41 @@ const API = {
 };
 
 
+// Penyimpanan sementara data layanan dan pesanan yang sedang ditampilkan.
 let _servicesCache = [];
 let _ordersCache   = [];
 
+// Helper untuk menampilkan nominal dalam format rupiah.
 function rupiah(n) { return 'Rp ' + Number(n||0).toLocaleString('id-ID'); }
 function esc(str) {
   return String(str).replace(/[&<>"']/g,
     c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+// Menunda eksekusi fungsi agar pencarian tidak terlalu sering dipanggil.
 function debounce(fn, ms) {
   let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
 }
+// Menampilkan notifikasi singkat di bawah layar saat aksi berhasil atau gagal.
 function showToast(msg, type = 'ok') {
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.className = 'toast show ' + type;
   setTimeout(() => el.className = 'toast hidden', 3200);
 }
+// Mengubah tombol menjadi mode loading saat proses penyimpanan sedang berjalan.
 function setLoading(btnId, loading, label = 'Simpan') {
   const btn = document.getElementById(btnId);
   if (!btn) return;
   btn.disabled = loading;
   btn.textContent = loading ? 'Menyimpan...' : label;
 }
+// Membuat gambar placeholder sederhana jika layanan belum punya foto.
 function placeholderImg(text, color) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="100%" height="100%" fill="${color}"/><text x="50%" y="50%" font-family="Space Grotesk" font-size="34" fill="#0a0d16" text-anchor="middle" dominant-baseline="central" font-weight="700">${text}</text></svg>`;
   return 'data:image/svg+xml;base64,' + btoa(svg);
 }
 
+// Sistem tema: gelap, terang, dan otomatis sesuai preferensi perangkat.
 const THEME_KEY = 'yj_theme_mode';
 function getSystemTheme() {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -112,6 +120,7 @@ function initTheme() {
   });
 }
 
+// Mengganti tampilan form login/register saat user ingin masuk atau daftar.
 function switchTab(tab) {
   document.getElementById('tabLoginBtn').classList.toggle('active', tab === 'login');
   document.getElementById('tabRegisterBtn').classList.toggle('active', tab === 'register');
@@ -125,6 +134,7 @@ function showMsg(text, type) {
 }
 function hideMsg() { document.getElementById('loginMsg').className = 'form-msg'; }
 
+// Memproses login user dan membuka dashboard jika kredensial benar.
 async function handleLogin(e) {
   e.preventDefault();
   const btn = document.getElementById('loginBtn');
@@ -145,6 +155,7 @@ async function handleLogin(e) {
   }
 }
 
+// Membuat akun baru melalui endpoint register di server PHP.
 async function handleRegister(e) {
   e.preventDefault();
   const btn = document.getElementById('registerBtn');
@@ -166,6 +177,7 @@ async function handleRegister(e) {
   }
 }
 
+// Menghapus sesi pengguna dan mengembalikan tampilan ke layar login.
 async function logout() {
   try { await API.post('/auth.php?action=logout', {}); } catch (_) {}
   API.token = null;
@@ -176,6 +188,7 @@ async function logout() {
   document.getElementById('loginForm').reset();
 }
 
+// Menampilkan dashboard utama setelah login berhasil.
 function enterApp(user) {
   if (!user) return;
   document.getElementById('loginScreen').classList.add('hidden');
@@ -214,6 +227,7 @@ function enterApp(user) {
 
 initTheme();
 
+// Menghitung ringkasan statistik yang tampil di hero section dashboard.
 function renderStats() {
   const aktif   = _servicesCache.filter(s => s.status === 'Aktif').length;
   const total   = _ordersCache.length;
@@ -230,6 +244,7 @@ function renderStats() {
 
 let tempImages = [];
 
+// Mengambil dan menampilkan data layanan dari server ke tabel layanan.
 async function renderServices() {
   const q = document.getElementById('searchServices').value || '';
   const body = document.getElementById('servicesBody');
@@ -268,6 +283,7 @@ async function renderServices() {
   }
 }
 
+// Membuka modal untuk menambah atau mengedit data layanan.
 async function openServiceModal(id) {
   tempImages = [];
   document.getElementById('serviceForm').reset();
@@ -296,6 +312,7 @@ async function openServiceModal(id) {
   openModal('serviceModalOverlay');
 }
 
+// Menangani upload beberapa gambar layanan sekaligus.
 function handleMultiUpload(e) {
   const files = Array.from(e.target.files || []);
   files.forEach(file => {
@@ -305,13 +322,16 @@ function handleMultiUpload(e) {
   });
   e.target.value = '';
 }
+// Menampilkan pratinjau gambar yang sudah dipilih sebelum disimpan.
 function renderPreview() {
   document.getElementById('svcPreview').innerHTML = tempImages.map((src, i) => `
     <div class="preview-item"><img src="${src}"><button type="button" onclick="removeTempImage(${i})">✕</button></div>
   `).join('');
 }
+// Menghapus gambar yang sudah dipilih dari daftar preview sebelum disimpan.
 function removeTempImage(i) { tempImages.splice(i, 1); renderPreview(); }
 
+// Menyimpan data layanan baru atau hasil edit ke database melalui PHP.
 async function saveService(e) {
   e.preventDefault();
   setLoading('svcSaveBtn', true, 'Simpan Layanan');
@@ -344,6 +364,7 @@ async function saveService(e) {
   }
 }
 
+// Menampilkan detail lengkap layanan dalam modal tampilan detail.
 async function viewService(id) {
   try {
     const res = await API.get(`/services.php?id=${id}`);
@@ -368,6 +389,7 @@ async function viewService(id) {
 }
 
 
+// Mengisi pilihan layanan pada form tambah/edit pesanan.
 async function fillOrderServiceOptions() {
   try {
     const res = await API.get('/services.php');
@@ -378,6 +400,7 @@ async function fillOrderServiceOptions() {
   } catch (_) {}
 }
 
+// Mengambil dan menampilkan data pesanan ke tabel pesanan.
 async function renderOrders() {
   const q = document.getElementById('searchOrders').value || '';
   const body = document.getElementById('ordersBody');
@@ -416,6 +439,7 @@ async function renderOrders() {
   }
 }
 
+// Membuka modal untuk menambah atau mengedit pesanan beserta tanda tangan digital.
 async function openOrderModal(id) {
   await fillOrderServiceOptions();
   document.getElementById('orderForm').reset();
@@ -446,6 +470,7 @@ async function openOrderModal(id) {
   setTimeout(() => resizeCanvas(), 60);
 }
 
+// Menyimpan data pesanan baru atau hasil edit ke server.
 async function saveOrder(e) {
   e.preventDefault();
   setLoading('ordSaveBtn', true, 'Simpan Pesanan');
@@ -474,6 +499,7 @@ async function saveOrder(e) {
   }
 }
 
+// Menampilkan tanda tangan digital klien dalam modal preview.
 async function viewSignature(id) {
   try {
     const res = await API.get(`/orders.php?id=${id}`);
@@ -484,6 +510,7 @@ async function viewSignature(id) {
 }
 
 
+// Area tanda tangan digital untuk persetujuan pesanan.
 let canvas, ctx, drawing = false, hasDrawn = false;
 function initSignaturePad() {
   canvas = document.getElementById('signCanvas');
@@ -494,6 +521,7 @@ function initSignaturePad() {
   ['mouseup','mouseleave','touchend'].forEach(ev => canvas.addEventListener(ev, endDraw));
   window.addEventListener('resize', resizeCanvas);
 }
+// Menyesuaikan ukuran kanvas tanda tangan sesuai layar perangkat.
 function resizeCanvas() {
   if (!canvas) return;
   const ratio = window.devicePixelRatio || 1;
@@ -505,6 +533,7 @@ function resizeCanvas() {
   ctx.lineWidth = 2.4; ctx.lineCap = 'round'; ctx.strokeStyle = '#1c2438';
   canvas.dataset.empty = '1';
 }
+// Mengambil posisi pointer atau sentuhan pada kanvas tanda tangan.
 function getPos(e) {
   const rect = canvas.getBoundingClientRect();
   return {
@@ -512,14 +541,18 @@ function getPos(e) {
     y: (e.touches ? e.touches[0].clientY : e.clientY) - rect.top,
   };
 }
+// Memulai proses menggambar tanda tangan saat mouse atau jari disentuh.
 function startDraw(e) { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }
+// Menangani pergerakan saat user menggambar tanda tangan.
 function drawMove(e) {
   if (!drawing) return; e.preventDefault();
   const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke();
   hasDrawn = true; canvas.dataset.empty = '';
   document.querySelector('.sign-hint').style.display = 'none';
 }
+// Mengakhiri proses menggambar ketika sentuhan atau klik selesai.
 function endDraw() { drawing = false; }
+// Menghapus tanda tangan yang ada di kanvas.
 function clearSignature() {
   if (!ctx) return;
   const rect = canvas.getBoundingClientRect();
@@ -528,6 +561,7 @@ function clearSignature() {
   const hint = document.querySelector('.sign-hint');
   if (hint) hint.style.display = 'block';
 }
+// Mengubah tanda tangan yang sudah digambar menjadi data gambar base64.
 function getSignatureDataIfDrawn() {
   if (!hasDrawn) return null;
   const data = canvas.toDataURL('image/png');
@@ -536,9 +570,12 @@ function getSignatureDataIfDrawn() {
 }
 
 
+// Membuka modal tertentu di halaman.
 function openModal(id)  { document.getElementById(id).classList.remove('hidden'); }
+// Menutup modal tertentu di halaman.
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
+// Menyimpan target data yang akan dihapus saat konfirmasi muncul.
 let deleteTarget = null;
 function confirmDelete(type, id) {
   deleteTarget = { type, id };
@@ -577,6 +614,7 @@ document.querySelectorAll('.overlay').forEach(ov => {
 });
 
 
+// Mengekspor data layanan atau pesanan ke CSV, Excel, atau format cetak.
 function exportTable(which, type) {
   let rows, filename;
   if (which === 'services') {
@@ -618,6 +656,7 @@ function exportTable(which, type) {
   }
 }
 
+// Membuat file unduhan dari isi teks atau data blob.
 function downloadBlob(content, filename, mime) {
   const blob = new Blob([content], { type: mime });
   const url  = URL.createObjectURL(blob);
@@ -627,6 +666,7 @@ function downloadBlob(content, filename, mime) {
 }
 
 
+// Fitur musik latar untuk presentasi menggunakan video YouTube embed.
 let bgmPlayer = null;
 let bgmReady = false;
 const BGM_VIDEO_ID = 'xxpg9_2on3I';
@@ -672,6 +712,7 @@ function initBgm() {
   }
 }
 
+// Memutar atau menghentikan musik latar saat tombol ditekan.
 function toggleBgm() {
   const btn = document.getElementById('bgmBtn');
   if (!bgmReady || !bgmPlayer) {

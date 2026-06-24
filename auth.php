@@ -1,11 +1,14 @@
 <?php
 
+// auth.php
+// Fungsi utamanya adalah menangani login, register, logout, dan pengecekan sesi user.
+
 require_once __DIR__ . '/config.php';
 
 $action = $_GET['action'] ?? '';
 $body   = json_decode(file_get_contents('php://input'), true) ?? [];
 
-
+// Proses login user dan membuat session token jika kredensial benar.
 if ($action === 'login') {
     $username = trim($body['username'] ?? '');
     $password = $body['password'] ?? '';
@@ -36,6 +39,7 @@ if ($action === 'login') {
 }
 
 
+// Proses pendaftaran akun baru dan menyimpan password terenkripsi.
 if ($action === 'register') {
     $name     = trim($body['name'] ?? '');
     $username = trim($body['username'] ?? '');
@@ -58,6 +62,7 @@ if ($action === 'register') {
 }
 
 
+// Menghapus sesi aktif saat user melakukan logout.
 if ($action === 'logout') {
     $token = bearerToken();
     if ($token) {
@@ -67,6 +72,7 @@ if ($action === 'logout') {
 }
 
 
+// Mengambil data user yang sedang login berdasarkan token sesi.
 if ($action === 'me') {
     $userId = requireAuth();
     $stmt = db()->prepare('SELECT id, name, username FROM users WHERE id = ?');

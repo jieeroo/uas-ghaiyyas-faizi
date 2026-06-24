@@ -1,11 +1,14 @@
 <?php
+// services.php
+// Fungsi utamanya adalah membaca, menambah, mengedit, dan menghapus layanan beserta gambar pendukungnya.
+
 
 require_once __DIR__ . '/config.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 $id     = isset($_GET['id']) ? (int) $_GET['id'] : null;
 
-
+// Menampilkan semua layanan atau detail satu layanan sesuai request.
 if ($method === 'GET') {
     if ($id) {
         // detail satu
@@ -42,6 +45,7 @@ if ($method === 'GET') {
 }
 
 
+// Menyimpan layanan baru ke database dan menyimpan gambarnya.
 if ($method === 'POST') {
     requireAuth();
     $body = json_decode(file_get_contents('php://input'), true) ?? [];
@@ -60,6 +64,7 @@ if ($method === 'POST') {
 }
 
 
+// Mengubah data layanan yang sudah ada dan memperbarui gambar terkait.
 if ($method === 'PUT') {
     requireAuth();
     if (!$id) error('ID layanan diperlukan.');
@@ -86,6 +91,7 @@ if ($method === 'PUT') {
 }
 
 
+// Menghapus layanan berdasarkan ID.
 if ($method === 'DELETE') {
     requireAuth();
     if (!$id) error('ID layanan diperlukan.');
@@ -100,6 +106,7 @@ if ($method === 'DELETE') {
 error('Method tidak didukung.', 405);
 
 
+// Menjaga data layanan tetap valid sebelum disimpan ke database.
 function validateServiceBody(array $b): array {
     $nama     = trim($b['nama']     ?? '');
     $game     = trim($b['game']     ?? '');
@@ -122,6 +129,7 @@ function validateServiceBody(array $b): array {
     ];
 }
 
+// Menyimpan data gambar layanan ke tabel service_images.
 function saveImages(int $serviceId, array $images): void {
     if (!$images) return;
     $stmt = db()->prepare(
@@ -132,6 +140,7 @@ function saveImages(int $serviceId, array $images): void {
     }
 }
 
+// Mengambil daftar gambar yang terkait dengan satu layanan.
 function fetchImages(int $serviceId): array {
     $stmt = db()->prepare(
         'SELECT image_data FROM service_images WHERE service_id = ? ORDER BY sort_order'
@@ -140,6 +149,7 @@ function fetchImages(int $serviceId): array {
     return array_column($stmt->fetchAll(), 'image_data');
 }
 
+// Mengambil satu layanan lengkap beserta gambarnya untuk ditampilkan ke frontend.
 function fetchService(int $id): ?array {
     $stmt = db()->prepare('SELECT * FROM services WHERE id = ?');
     $stmt->execute([$id]);
