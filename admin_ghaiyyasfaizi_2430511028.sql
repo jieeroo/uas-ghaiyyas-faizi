@@ -1,9 +1,4 @@
-CREATE DATABASE IF NOT EXISTS yassjokiin
-CHARACTER SET utf8mb4
-COLLATE utf8mb4_unicode_ci;
 
-CREATE DATABASE IF NOT EXISTS yassjokiin;
-USE yassjokiin;
 
 CREATE TABLE IF NOT EXISTS users (
   id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -16,7 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 INSERT IGNORE INTO users (name, username, password) VALUES
   ('Administrator', 'admin',
-   '$2y$12$YQX2h9k5G0x3XzFn8w1VkuFMm0HqDgQMvdU4QPBC7Kqr1zEJPIh2.');
+   'yas516');
 
 CREATE TABLE IF NOT EXISTS services (
   id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

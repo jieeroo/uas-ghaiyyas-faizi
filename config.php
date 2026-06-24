@@ -16,8 +16,11 @@ define('DB_CHARSET', 'utf8mb4');
 define('SESSION_LIFETIME', 60 * 60 * 8);
 define('ALLOWED_ORIGIN', '*');
 
-
-
+$host = 'localhost';
+$user = 'ifummiid_kelasa';
+$pass = 'pemweb_db_c';
+$database = 'ifummiid_kelasa';
+$conn = mysqli_connect($host, $user, $pass, $database);
 
 // Membuat koneksi database sekali saja dan mengembalikannya untuk dipakai berulang kali.
 function db(): PDO {
