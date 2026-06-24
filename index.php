@@ -85,7 +85,7 @@ window.__INITIAL_AUTH__ = <?php echo json_encode($initialAuth, JSON_UNESCAPED_UN
       <button class="btn btn-accent" type="submit" id="registerBtn" style="width:100%;justify-content:center;padding:13px;">Daftar Akun</button>
     </form>
     
-    <div class="hint-box">Akun demo: <b>yasadmin</b> / <b>yas123</b></div>
+    <div class="hint-box">Akun demo: <b>admin</b> / <b>yas123</b></div>
   </div>
 </div>
 <!-- End Register Form -->
@@ -479,26 +479,7 @@ window.__INITIAL_AUTH__ = <?php echo json_encode($initialAuth, JSON_UNESCAPED_UN
   </div>
 </div>
 <div id="toast" class="toast hidden"></div>
-<script>
-(function () {
-  try {
-    function getCookie(name) {
-      const m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
-      return m ? decodeURIComponent(m[1]) : '';
-    }
-    const auth = window.__INITIAL_AUTH__ || {};
-    const token = localStorage.getItem('yj_token') || sessionStorage.getItem('yj_token') || getCookie('yj_token');
-    const loggedInFlag = auth.loggedIn || localStorage.getItem('yj_logged_in') === '1' || sessionStorage.getItem('yj_logged_in') === '1' || !!getCookie('yj_logged_in');
-    const app = document.getElementById('app');
-    const loginScreen = document.getElementById('loginScreen');
-    document.documentElement.setAttribute('data-auth-view', (auth.loggedIn || token || loggedInFlag) ? 'app' : 'login');
-    if ((auth.loggedIn || token || loggedInFlag) && app && loginScreen) {
-      app.classList.remove('hidden');
-      loginScreen.classList.add('hidden');
-    }
-  } catch (_) {}
-})();
-</script>
+
 <script src="yas.js"></script>
 </body>
 </html>

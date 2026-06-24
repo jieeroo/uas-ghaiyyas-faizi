@@ -741,3 +741,22 @@ function downloadBlob(content, filename, mime) {
   a.href = url; a.download = filename; a.click();
   URL.revokeObjectURL(url);
 }
+
+(function () {
+  try {
+    function getCookie(name) {
+      const m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+      return m ? decodeURIComponent(m[1]) : '';
+    }
+    const auth = window.__INITIAL_AUTH__ || {};
+    const token = localStorage.getItem('yj_token') || sessionStorage.getItem('yj_token') || getCookie('yj_token');
+    const loggedInFlag = auth.loggedIn || localStorage.getItem('yj_logged_in') === '1' || sessionStorage.getItem('yj_logged_in') === '1' || !!getCookie('yj_logged_in');
+    const app = document.getElementById('app');
+    const loginScreen = document.getElementById('loginScreen');
+    document.documentElement.setAttribute('data-auth-view', (auth.loggedIn || token || loggedInFlag) ? 'app' : 'login');
+    if ((auth.loggedIn || token || loggedInFlag) && app && loginScreen) {
+      app.classList.remove('hidden');
+      loginScreen.classList.add('hidden');
+    }
+  } catch (_) {}
+})();

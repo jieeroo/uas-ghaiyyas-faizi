@@ -9,18 +9,12 @@ if (session_status() === PHP_SESSION_NONE) {
 
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'yassjokiin');
-define('DB_USER', 'root');          
-define('DB_PASS', '');              
+define('DB_USER', 'root');
+define('DB_PASS', '');
 define('DB_CHARSET', 'utf8mb4');
 
-define('SESSION_LIFETIME', 60 * 60 * 8);  
-define('ALLOWED_ORIGIN', '*');              
-
-$host = 'localhost';
-$user = 'ifummiid_kelasa';
-$pass = 'pemweb_db_a';
-$database = 'ifummiid_kelasa';
-$conn = mysqli_connect($host, $user, $pass, $database);
+define('SESSION_LIFETIME', 60 * 60 * 8);
+define('ALLOWED_ORIGIN', '*');
 
 
 
