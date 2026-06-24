@@ -221,10 +221,9 @@ function enterApp(user) {
     const savedToken = localStorage.getItem('yj_token');
     const savedUser = JSON.parse(localStorage.getItem('yj_user') || 'null');
 
-    if (savedToken) API.token = savedToken;
-
-    if (savedUser) {
-      enterApp(savedUser);
+    if (savedToken) {
+      API.token = savedToken;
+      enterApp(savedUser || { name: 'User', username: 'User' });
     }
 
     if (!API.token) return;
