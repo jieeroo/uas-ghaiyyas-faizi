@@ -4,7 +4,9 @@ const API = {
     const path = window.location.pathname;
     return path.substring(0, path.lastIndexOf('/') + 1);
   })(),
-  token: localStorage.getItem('yj_token') || null,
+  token: (typeof localStorage !== 'undefined' ? localStorage.getItem('yj_token') : null)
+    || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('yj_token') : null)
+    || null,
 
   headers() {
     const h = { 'Content-Type': 'application/json' };
@@ -140,6 +142,49 @@ function syncAuthView(showApp) {
   }
 }
 
+function setCookie(name, value, days = 7) {
+  const expires = new Date(Date.now() + days * 86400000).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; expires=${expires}; SameSite=Lax`;
+}
+function deleteCookie(name) {
+  document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+}
+function getStoredAuthState() {
+  const token = localStorage.getItem('yj_token') || sessionStorage.getItem('yj_token') || document.cookie.match(/(?:^|; )yj_token=([^;]*)/)?.[1] || '';
+  const user = localStorage.getItem('yj_user') || sessionStorage.getItem('yj_user') || '';
+  const loggedInFlag = localStorage.getItem('yj_logged_in') === '1' || sessionStorage.getItem('yj_logged_in') === '1' || !!document.cookie.match(/(?:^|; )yj_logged_in=1/);
+  return {
+    token: decodeURIComponent(token || ''),
+    user: user ? JSON.parse(user) : null,
+    loggedInFlag,
+  };
+}
+function persistAuthState(token, user) {
+  if (token) {
+    localStorage.setItem('yj_token', token);
+    sessionStorage.setItem('yj_token', token);
+    setCookie('yj_token', token);
+  } else {
+    localStorage.removeItem('yj_token');
+    sessionStorage.removeItem('yj_token');
+    deleteCookie('yj_token');
+  }
+
+  if (user) {
+    localStorage.setItem('yj_user', JSON.stringify(user));
+    sessionStorage.setItem('yj_user', JSON.stringify(user));
+    localStorage.setItem('yj_logged_in', '1');
+    sessionStorage.setItem('yj_logged_in', '1');
+    setCookie('yj_logged_in', '1');
+  } else {
+    localStorage.removeItem('yj_user');
+    sessionStorage.removeItem('yj_user');
+    localStorage.removeItem('yj_logged_in');
+    sessionStorage.removeItem('yj_logged_in');
+    deleteCookie('yj_logged_in');
+  }
+}
+
 // Mengganti tampilan form login/register saat user ingin masuk atau daftar.
 function switchTab(tab) {
   document.getElementById('tabLoginBtn').classList.toggle('active', tab === 'login');
@@ -166,9 +211,7 @@ async function handleLogin(e) {
     const res = await API.post('/auth.php?action=login', { username, password });
     if (!res || !res.ok) throw new Error(res?.error || 'Login gagal.');
     API.token = res.token;
-    localStorage.setItem('yj_token', res.token || '');
-    localStorage.setItem('yj_user', JSON.stringify(res.user || {}));
-    localStorage.setItem('yj_logged_in', '1');
+    persistAuthState(res.token || null, res.user || {});
     syncAuthView(true);
     enterApp(res.user);
   } catch (err) {
@@ -204,9 +247,7 @@ async function handleRegister(e) {
 async function logout() {
   try { await API.post('/auth.php?action=logout', {}); } catch (_) {}
   API.token = null;
-  localStorage.removeItem('yj_token');
-  localStorage.removeItem('yj_user');
-  localStorage.removeItem('yj_logged_in');
+  persistAuthState(null, null);
   const app = document.getElementById('app');
   const loginScreen = document.getElementById('loginScreen');
   const loginForm = document.getElementById('loginForm');
@@ -231,9 +272,10 @@ function enterApp(user) {
 
 (async function checkSession() {
   try {
-    const savedToken = localStorage.getItem('yj_token');
-    const savedUser = JSON.parse(localStorage.getItem('yj_user') || 'null');
-    const loggedInFlag = localStorage.getItem('yj_logged_in') === '1';
+    const savedState = getStoredAuthState();
+    const savedToken = savedState.token || '';
+    const savedUser = savedState.user;
+    const loggedInFlag = savedState.loggedInFlag;
     const shouldShowApp = Boolean(savedToken || loggedInFlag);
 
     if (!shouldShowApp) {
@@ -248,21 +290,14 @@ function enterApp(user) {
     try {
       const res = await API.get('/auth.php?action=me');
       if (res && res.ok && res.user) {
-        localStorage.setItem('yj_user', JSON.stringify(res.user));
+        persistAuthState(savedToken || null, res.user);
         enterApp(res.user);
       }
     } catch (_) {
-      if (!localStorage.getItem('yj_token') && localStorage.getItem('yj_logged_in') !== '1') {
-        localStorage.removeItem('yj_user');
-        localStorage.removeItem('yj_token');
-        localStorage.removeItem('yj_logged_in');
-        syncAuthView(false);
-      }
+      persistAuthState(savedToken || null, savedUser || null);
     }
   } catch (_) {
-    localStorage.removeItem('yj_user');
-    localStorage.removeItem('yj_token');
-    localStorage.removeItem('yj_logged_in');
+    persistAuthState(null, null);
     syncAuthView(false);
   }
 })();

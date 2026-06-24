@@ -1,3 +1,13 @@
+<?php require_once __DIR__ . '/config.php';
+$initialAuth = [
+  'loggedIn' => !empty($_SESSION['user_id']),
+  'user' => !empty($_SESSION['user_id']) ? [
+    'id' => (int) $_SESSION['user_id'],
+    'name' => $_SESSION['user_name'] ?? '',
+    'username' => $_SESSION['user_username'] ?? '',
+  ] : null,
+];
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -5,10 +15,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Yassjokiin — Joki Game Terpercaya</title>
 <script>
+window.__INITIAL_AUTH__ = <?php echo json_encode($initialAuth, JSON_UNESCAPED_UNICODE); ?>;
 (function () {
-  const token = localStorage.getItem('yj_token');
-  const loggedInFlag = localStorage.getItem('yj_logged_in') === '1';
-  document.documentElement.setAttribute('data-auth-view', (token || loggedInFlag) ? 'app' : 'login');
+  function getCookie(name) {
+    const m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+  const auth = window.__INITIAL_AUTH__ || {};
+  const token = localStorage.getItem('yj_token') || sessionStorage.getItem('yj_token') || getCookie('yj_token');
+  const loggedInFlag = auth.loggedIn || localStorage.getItem('yj_logged_in') === '1' || sessionStorage.getItem('yj_logged_in') === '1' || !!getCookie('yj_logged_in');
+  document.documentElement.setAttribute('data-auth-view', (auth.loggedIn || token || loggedInFlag) ? 'app' : 'login');
 })();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -466,12 +482,17 @@
 <script>
 (function () {
   try {
-    const token = localStorage.getItem('yj_token');
-    const loggedInFlag = localStorage.getItem('yj_logged_in') === '1';
+    function getCookie(name) {
+      const m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+      return m ? decodeURIComponent(m[1]) : '';
+    }
+    const auth = window.__INITIAL_AUTH__ || {};
+    const token = localStorage.getItem('yj_token') || sessionStorage.getItem('yj_token') || getCookie('yj_token');
+    const loggedInFlag = auth.loggedIn || localStorage.getItem('yj_logged_in') === '1' || sessionStorage.getItem('yj_logged_in') === '1' || !!getCookie('yj_logged_in');
     const app = document.getElementById('app');
     const loginScreen = document.getElementById('loginScreen');
-    document.documentElement.setAttribute('data-auth-view', (token || loggedInFlag) ? 'app' : 'login');
-    if ((token || loggedInFlag) && app && loginScreen) {
+    document.documentElement.setAttribute('data-auth-view', (auth.loggedIn || token || loggedInFlag) ? 'app' : 'login');
+    if ((auth.loggedIn || token || loggedInFlag) && app && loginScreen) {
       app.classList.remove('hidden');
       loginScreen.classList.add('hidden');
     }

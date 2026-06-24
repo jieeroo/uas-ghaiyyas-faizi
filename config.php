@@ -3,6 +3,10 @@
 // config.php
 // Berisi koneksi database, lama sesi login, dan fungsi bantu backend seperti auth dan response JSON.
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'yassjokiin');
 define('DB_USER', 'root');          
@@ -72,16 +76,22 @@ function bearerToken(): ?string {
 // Memastikan request memiliki sesi login yang valid sebelum mengakses data sensitif.
 function requireAuth(): int {
     $token = bearerToken();
-    if (!$token) error('Unauthorized — token tidak ditemukan.', 401);
+    if ($token) {
+        $stmt = db()->prepare(
+            'SELECT user_id FROM sessions WHERE token = ? AND expires_at > NOW()'
+        );
+        $stmt->execute([$token]);
+        $row = $stmt->fetch();
+        if ($row) {
+            return (int) $row['user_id'];
+        }
+    }
 
-    $stmt = db()->prepare(
-        'SELECT user_id FROM sessions WHERE token = ? AND expires_at > NOW()'
-    );
-    $stmt->execute([$token]);
-    $row = $stmt->fetch();
-    if (!$row) error('Unauthorized — sesi tidak valid atau sudah berakhir.', 401);
+    if (!empty($_SESSION['user_id'])) {
+        return (int) $_SESSION['user_id'];
+    }
 
-    return (int) $row['user_id'];
+    error('Unauthorized — sesi tidak valid atau sudah berakhir.', 401);
 }
 
 

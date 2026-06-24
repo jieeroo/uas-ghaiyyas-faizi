@@ -46,6 +46,10 @@ if ($action === 'login') {
         'INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)'
     )->execute([$token, $user['id'], $expiresAt]);
 
+    $_SESSION['user_id'] = $user['id'];
+    $_SESSION['user_name'] = $user['name'];
+    $_SESSION['user_username'] = $user['username'];
+
     respond([
         'ok'    => true,
         'token' => $token,
@@ -83,6 +87,8 @@ if ($action === 'logout') {
     if ($token) {
         db()->prepare('DELETE FROM sessions WHERE token = ?')->execute([$token]);
     }
+    session_unset();
+    session_destroy();
     respond(['ok' => true]);
 }
 
