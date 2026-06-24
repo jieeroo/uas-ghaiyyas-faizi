@@ -80,6 +80,10 @@ h1,h2,h3,h4,.brand,.tier-label,.btn,th,.stat-num{font-family:var(--ff-display);l
 a{color:inherit;}
 img{max-width:100%;display:block;}
 .hidden{display:none !important;}
+html[data-auth-view="app"] #loginScreen{display:none !important;}
+html[data-auth-view="app"] #app{display:block !important;}
+html[data-auth-view="login"] #app{display:none !important;}
+html[data-auth-view="login"] #loginScreen{display:flex !important;}
 .theme-shell{position:fixed;top:16px;right:16px;z-index:220;}
 .theme-toggle{width:46px;height:46px;border:none;border-radius:50%;display:grid;place-items:center;cursor:pointer;background:var(--surface);border:1px solid var(--border);box-shadow:0 10px 30px rgba(0,0,0,.16);color:var(--accent);transition:transform .2s ease, background .2s ease, color .2s ease; padding:0;}
 .theme-toggle:hover{transform:translateY(-1px);}

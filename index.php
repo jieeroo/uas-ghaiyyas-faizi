@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Yassjokiin — Joki Game Terpercaya</title>
+<script>
+(function () {
+  const token = localStorage.getItem('yj_token');
+  const loggedInFlag = localStorage.getItem('yj_logged_in') === '1';
+  document.documentElement.setAttribute('data-auth-view', (token || loggedInFlag) ? 'app' : 'login');
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -456,6 +463,21 @@
   </div>
 </div>
 <div id="toast" class="toast hidden"></div>
+<script>
+(function () {
+  try {
+    const token = localStorage.getItem('yj_token');
+    const loggedInFlag = localStorage.getItem('yj_logged_in') === '1';
+    const app = document.getElementById('app');
+    const loginScreen = document.getElementById('loginScreen');
+    document.documentElement.setAttribute('data-auth-view', (token || loggedInFlag) ? 'app' : 'login');
+    if ((token || loggedInFlag) && app && loginScreen) {
+      app.classList.remove('hidden');
+      loginScreen.classList.add('hidden');
+    }
+  } catch (_) {}
+})();
+</script>
 <script src="yas.js"></script>
 </body>
 </html>

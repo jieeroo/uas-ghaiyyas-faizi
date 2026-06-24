@@ -126,6 +126,20 @@ function initTheme() {
   });
 }
 
+function syncAuthView(showApp) {
+  const app = document.getElementById('app');
+  const loginScreen = document.getElementById('loginScreen');
+  if (!app || !loginScreen) return;
+  document.documentElement.setAttribute('data-auth-view', showApp ? 'app' : 'login');
+  if (showApp) {
+    app.classList.remove('hidden');
+    loginScreen.classList.add('hidden');
+  } else {
+    app.classList.add('hidden');
+    loginScreen.classList.remove('hidden');
+  }
+}
+
 // Mengganti tampilan form login/register saat user ingin masuk atau daftar.
 function switchTab(tab) {
   document.getElementById('tabLoginBtn').classList.toggle('active', tab === 'login');
@@ -154,6 +168,8 @@ async function handleLogin(e) {
     API.token = res.token;
     localStorage.setItem('yj_token', res.token || '');
     localStorage.setItem('yj_user', JSON.stringify(res.user || {}));
+    localStorage.setItem('yj_logged_in', '1');
+    syncAuthView(true);
     enterApp(res.user);
   } catch (err) {
     showMsg(err.message || 'Username atau password salah.', 'err');
@@ -190,23 +206,20 @@ async function logout() {
   API.token = null;
   localStorage.removeItem('yj_token');
   localStorage.removeItem('yj_user');
+  localStorage.removeItem('yj_logged_in');
   const app = document.getElementById('app');
   const loginScreen = document.getElementById('loginScreen');
   const loginForm = document.getElementById('loginForm');
-  if (app) app.classList.add('hidden');
-  if (loginScreen) loginScreen.classList.remove('hidden');
+  syncAuthView(false);
   if (loginForm) loginForm.reset();
 }
 
 // Menampilkan dashboard utama setelah login berhasil.
 function enterApp(user) {
   if (!user) return;
-  const loginScreen = document.getElementById('loginScreen');
-  const app = document.getElementById('app');
+  syncAuthView(true);
   const userNameLabel = document.getElementById('userNameLabel');
   const userAvatar = document.getElementById('userAvatar');
-  if (loginScreen) loginScreen.classList.add('hidden');
-  if (app) app.classList.remove('hidden');
   if (userNameLabel) userNameLabel.textContent = user.name || user.username || 'User';
   if (userAvatar) userAvatar.textContent = (user.name || user.username || 'U').charAt(0).toUpperCase();
   renderServices();
@@ -220,13 +233,17 @@ function enterApp(user) {
   try {
     const savedToken = localStorage.getItem('yj_token');
     const savedUser = JSON.parse(localStorage.getItem('yj_user') || 'null');
+    const loggedInFlag = localStorage.getItem('yj_logged_in') === '1';
+    const shouldShowApp = Boolean(savedToken || loggedInFlag);
 
-    if (savedToken) {
-      API.token = savedToken;
-      enterApp(savedUser || { name: 'User', username: 'User' });
+    if (!shouldShowApp) {
+      syncAuthView(false);
+      return;
     }
 
-    if (!API.token) return;
+    API.token = savedToken || '';
+    syncAuthView(true);
+    enterApp(savedUser || { name: 'User', username: 'User' });
 
     try {
       const res = await API.get('/auth.php?action=me');
@@ -235,11 +252,18 @@ function enterApp(user) {
         enterApp(res.user);
       }
     } catch (_) {
-      // Tetap tampilkan dashboard dari data yang tersimpan saat refresh.
+      if (!localStorage.getItem('yj_token') && localStorage.getItem('yj_logged_in') !== '1') {
+        localStorage.removeItem('yj_user');
+        localStorage.removeItem('yj_token');
+        localStorage.removeItem('yj_logged_in');
+        syncAuthView(false);
+      }
     }
   } catch (_) {
     localStorage.removeItem('yj_user');
     localStorage.removeItem('yj_token');
+    localStorage.removeItem('yj_logged_in');
+    syncAuthView(false);
   }
 })();
 
